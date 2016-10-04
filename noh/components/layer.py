@@ -1,38 +1,52 @@
-from noh.component import Component
-from noh.training_functions import gen_sgd_trainer
-from noh.activate_functions import sigmoid
-
 import numpy as np
+from noh.activate_functions import sigmoid, p_sig
+from noh.training_functions import gen_sgd_trainer
+
+from noh.component import Component
 
 
 class Layer(Component):
-    def __init__(self, n_visible, n_hidden, train_func_generator=gen_sgd_trainer, activate=sigmoid):
+    def __init__(self, n_visible, n_hidden, activate=sigmoid):
         super(Layer, self).__init__()
         a = 1. / n_visible
 
         self.n_visible = n_visible
         self.n_hidden = n_hidden
-        self.W = np.array(np.random.uniform(low=-a, high=a, size=(n_visible, n_hidden)),
-                          dtype=np.float32)
+        self.W = np.array(np.random.uniform(low=-a, high=a, size=(n_visible, n_hidden)), dtype=np.float32)
         self.b_visible = np.zeros(n_visible, dtype=np.float32)
         self.b_hidden = np.zeros(n_hidden, dtype=np.float32)
 
-        self._train = train_func_generator(self)
+        self.lr = 0.01
 
         self.activate = activate
         self.rng = np.random.RandomState(123)
 
-        self.params = {"W": (lambda: self.W),
-                      "b_visible": (lambda: self.b_visible),
-                      "b_hidden": (lambda: self.b_hidden)}
+    def __call__(self, data, label=None, reward=None, **kwargs):
 
-    def __call__(self, data, **kwargs):
-        return self.prop_up(data)
+        t = self.prop_up(data)
+        error = 0.
+        if label is not None:
+            error = t - label
+            self.error_hist.append(error)
+        else:
+            self.error_hist.append(None)
 
-    def train(self, data, label, epochs, **kwargs):
+        self.input_hist.append(data)
+        self.output_hist.append(t)
+        self.reward_hist.append(reward)
+
+        return sum(error)**2
+
+    def supervised_train(self, epochs=1):
+        e = np.array(self.error_hist)[0]
+        x = np.array(self.input_hist)[0]
+        y = np.array(self.output_hist)[0]
         for _ in xrange(epochs):
-            error = self._train(data, label)
-        return error
+                self.W += self.lr * np.dot((p_sig(y) * e).T, x).T
+                self.b_hidden += self.lr * np.dot((p_sig(y) * e).T, np.ones((self.n_hidden, 1)))[0]
+
+        input_error = np.dot(e, self.W.T)
+        return input_error
 
     def prop_up(self, v):
         return self.activate(np.dot(v, self.W) + self.b_hidden)

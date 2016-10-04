@@ -1,0 +1,18 @@
+from noh.environment import SupervisedEnvironment
+
+import numpy as np
+
+class Sin2CosTest(SupervisedEnvironment):
+
+    x_list = np.array([float(x) for x in xrange(360)])
+    x = np.sin(x_list * np.pi / 180. )
+    y = np.cos(x_list*2 * np.pi / 180. )
+            
+    dataset = (x, y)
+
+    def __init__(self, model):
+        super(Sin2CosTest, self).__init__(model)
+	
+    def train(self, epochs=None):
+        super(Sin2CosTest, self).train(epochs=1000)
+    

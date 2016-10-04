@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
-
+import warnings
 
 class Component(object):
     """ Callable Component for Circuits with training capability.
 
     Bind, Circuit, and all component implementations defined in :mod:
-    `noh.components` inherit this class.
+    `noh_.components` inherit this class.
 
     :class: `Component`s are the basic building blocks for :class: `Circuits`
     which must provide interfaces to be called and trained. Every component is
@@ -20,32 +20,24 @@ class Component(object):
     def __init__(self):
         self.params = {}
 
+        self.input_hist = []
+        self.output_hist = []
+        self.error_hist = []
+        self.reward_hist = []
+
     @abstractmethod
     def __call__(self, data, **kwargs):
         raise NotImplementedError("`__call__` must be explicitly overridden")
 
-    @abstractmethod
-    def train(self, data, label, epochs, **kwargs):
-        raise NotImplementedError("`train` must be explicitly overridden")
+    def supervised_train(self, data, label, epochs, **kwargs):
+        warnings.warn("supervised_train will do nothing")
+
+    def unsupervised_train(self, data, label, epochs, **kwargs):
+        warnings.warn("unsupervised_train will do nothing")
+
+    def reinforcement_train(self, data, label, epochs, **kwargs):
+        warnings.warn("reinforcemnt_train will do nothing")
 
     def save_params(self):
+        raise NotImplementedError("`train` must be explicitly overridden")
 
-        import sys, os
-        import numpy as np
-
-        class_name = self.__class__.__name__
-        exec_name = os.path.splitext(sys.argv[0])[0]
-
-        cwd = os.getcwd()
-        dir_name = cwd + "/" + exec_name + "_save/"
-        print dir_name
-        if not os.path.exists(dir_name):
-            os.mkdir(dir_name)
-
-        for parm in self.params:
-            print parm
-            file_name =class_name+"_"+parm+".npy"
-            np.save(dir_name + file_name, self.params[parm]())
-
-    def reset(self):
-        pass

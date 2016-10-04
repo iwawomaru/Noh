@@ -1,17 +1,18 @@
 import numpy as np
 
 from noh.components import Layer
-from noh.utils import get_lr_func
-from noh.activate_functions import sigmoid, p_sig
+from noh_.utils import get_lr_func
+from noh_.activate_functions import sigmoid, p_sig
+
 
 class RBM(Layer):
     def __init__(self, n_visible, n_hidden, lr_type="hinton_r_div", r_div=None, lr=None):
         super(RBM, self).__init__(n_visible, n_hidden)
-        self.lr_type=lr_type
+        self.lr_type = lr_type
         self.get_lr = get_lr_func(lr_type=lr_type, r_div=r_div, lr=lr)
 
     def train(self, data, label=None, lr=0.01, k=1, epochs=1000):
-        self.unsupervised_train(data,  k=k, epochs=epochs)
+        self.unsupervised_train(data, k=k, epochs=epochs)
 
     @classmethod
     def DALP(cls, data, epochs, k=1, H0=1, H1=10, lr_type="hinton_r_div", r_div=None, lr=None):
@@ -25,7 +26,7 @@ class RBM(Layer):
         E0 = rbm0.get_rec_cross_entropy(data)
 
         print "******* RBM1 *******"
-        
+
         rbm1 = cls(n_visible=n_visible, n_hidden=H1, lr_type=lr_type, r_div=r_div, lr=lr)
         rbm1.unsupervised_train(data, k=k, epochs=epochs)
         E1 = rbm1.get_rec_cross_entropy(data)
@@ -45,7 +46,7 @@ class RBM(Layer):
     def unsupervised_train(self, data, epochs=1000, minibatch_size=100, k=1):
         for i in xrange(epochs):
             for mb_id in xrange(max((data.shape[0] / minibatch_size), 1)):
-                mdata = data[mb_id * minibatch_size : min((mb_id+1) * minibatch_size, data.shape[0])]
+                mdata = data[mb_id * minibatch_size: min((mb_id + 1) * minibatch_size, data.shape[0])]
                 self.CD(data=mdata)
             print "epoch: ", i, self.get_rec_cross_entropy(data)
 
@@ -65,15 +66,15 @@ class RBM(Layer):
         # print "lr = ", lr
 
         self.W += lr * dW
-        self.b_visible += lr * np.mean(data - nv_sample, axis=0) / data.shape[0]
-        self.b_hidden += lr * np.mean(h_sample - nh_mean, axis=0) / data.shape[0]
+        # self.b_visible += lr * np.mean(data - nv_sample, axis=0) / data.shape[0]
+        # self.b_hidden += lr * np.mean(h_sample - nh_mean, axis=0) / data.shape[0]
 
     def get_energy(self, data):
         """ Return Scala Value """
         hid = self.prop_up(data)
         eng = - np.dot(self.b_visible, data.T).sum(axis=0) - \
-            np.dot(np.dot(data, self.W).T, hid).sum(axis=0) - \
-            np.dot(hid, self.b_hidden).sum(axis=0)
+              np.dot(np.dot(data, self.W).T, hid).sum(axis=0) - \
+              np.dot(hid, self.b_hidden).sum(axis=0)
 
         return eng.mean()
 
